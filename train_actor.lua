@@ -187,7 +187,7 @@ for e=1,opt.max_epoch do
 				end
 			else
 				if b==1 then
-				print(string.format('action: %d(unavailable!), image_id: %d, correct: %d, score: %.4f, bb(%d,%d,%d,%d)', actions[t], next_image_id, correct, score, next_bb[1],next_bb[2],next_bb[3],next_bb[4]))
+					print(string.format('action: %d(unavailable!), image_id: %d, correct: %d, score: %.4f, bb(%d,%d,%d,%d)', actions[t], next_image_id, correct, score, next_bb[1],next_bb[2],next_bb[3],next_bb[4]))
 				end
 			end
 			-- we find the object!

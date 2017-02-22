@@ -3,6 +3,9 @@
 
 ## Download facebook resnet implementation and pretrained models
 Download from https://github.com/facebook/fb.resnet.torch and install it into current directory
+```bash
+git clone https://github.com/facebook/fb.resnet.torch.git
+```
 
 Download pretrained model resnet-18
 ```bash
