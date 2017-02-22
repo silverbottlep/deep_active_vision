@@ -38,17 +38,6 @@ function loadData(dataFile)
   return data
 end
 
--- pretrained classifier has different category orders than released dataset
--- object_names_new.txt vs object_names_old.txt
-local class_idx = torch.Tensor({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,20,22,33,23,24,25,27,28,29,30,31,32,16,17,18,19,21,26})
-function class_old2new(old_prob)
-	local new_prob = torch.zeros(33)
-	for i=1,33 do
-		new_prob[i] = old_prob[class_idx[i]]
-	end
-  return new_prob
-end
-
 -- scene names and ids
 local scene_names = {'Home_01_1','Home_01_2','Home_02_1','Home_03_1','Home_03_2','Home_04_1','Home_04_2','Home_05_1','Home_05_2','Home_06_1','Home_08_1','Home_14_1','Home_14_2','Office_01_1'}
 local scene_ids = {00011,00012,00021,00031,00032,00041,00042,00051,00052,00061,00081,00141,00142,10011}
@@ -75,6 +64,17 @@ local meanstd = {
 local transform = t.Compose{
 	 t.ColorNormalize(meanstd),
 }
+
+-- pretrained classifier has different category orders than released dataset
+-- object_names_new.txt vs object_names_old.txt
+local class_idx = torch.Tensor({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,20,22,33,23,24,25,27,28,29,30,31,32,16,17,18,19,21,26})
+function class_old2new(old_prob)
+	local new_prob = torch.zeros(n_object)
+	for i=1,n_object do
+		new_prob[i] = old_prob[class_idx[i]]
+	end
+  return new_prob
+end
 
 -- getting annotations(each entry - x1,y1,x2,y2,correct,prob)
 function get_annotations(scene_id, N)

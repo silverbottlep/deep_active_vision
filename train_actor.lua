@@ -11,16 +11,14 @@ torch.setdefaulttensortype('torch.FloatTensor')
 
 opt = lapp[[
   --batch_size				(default 20)
-  --img_scale         (default 160)
 	--iter_per_epoch		(default 1000)
   --lr								(default 0.00005)
   --max_epoch					(default 30)
-  --dropout						(default 0)
-  --optim_layer				(default 3)
   --scale							(default 0.2)
   --threshold					(default 0.9)
 	--T									(default 5)
 	--split							(default 1)
+	--cnn_path					(default './snapshots/resnet-18.t7')
   -g, --gpu           (default 1)
 	-d, --debug					(default 0)
 ]]
@@ -30,13 +28,11 @@ if opt.debug>0 then
 	debugger.enter()
 end
 
-local model_name = string.format('actor_T%d_do0%d_lr%.6f_imgscale%d_split%d', 
-			opt.T, opt.dropout*10, opt.lr, opt.img_scale, opt.split)
+local model_name = string.format('actor_T%d_lr%.6f_split%d', opt.T, opt.lr, opt.split)
 
 local timer = torch.Timer()
 print("creating model")
-local cnn_path = './snapshots/resnet-18.t7'
-local cnn = torch.load(cnn_path)
+local cnn = torch.load(opt.cnn_path)
 cnn:remove(#cnn.modules)
 cnn:remove(#cnn.modules)
 cnn:remove(#cnn.modules)
@@ -44,34 +40,20 @@ cnn:remove(#cnn.modules)
 cnn:remove(#cnn.modules)
 local actor = create_model.actor(opt)
 
-config = {
+local config = {
 	learningRate = opt.lr,
 	beta1 = 0.9,
 	beta2 = 0.999,
 }
-state = {}
-reward_list = torch.Tensor(1,1):fill(0)
+local state = {}
+local reward_list = torch.Tensor(1,1):fill(0)
 
 -- mean subtraction, data augmentation
 local meanstd = {
    mean = { 0.485, 0.456, 0.406 },
    std = { 0.229, 0.224, 0.225 },
 }
-local pca = {
-   eigval = torch.Tensor{ 0.2175, 0.0188, 0.0045 },
-   eigvec = torch.Tensor{
-      { -0.5675,  0.7192,  0.4009 },
-      { -0.5808, -0.0045, -0.8140 },
-      { -0.5836, -0.6948,  0.4203 },
-   },
- }
 local transform = t.Compose{
---	 t.ColorJitter({
---		 brightness = 0.4,
---		 contrast = 0.4,
---		 saturation = 0.4,
---	 }),
---	t.Lighting(0.1, pca.eigval, pca.eigvec),
 	t.ColorNormalize(meanstd),
 }
 
@@ -95,27 +77,27 @@ grad_params:zero()
 print('cloning actor.... ')
 actor_clones = model_utils.clone_many_times(actor, opt.T)
 
--- loading training images
-scene_names = {}
---table.insert(scene_names, 'Bedroom_01_1')
-table.insert(scene_names, 'Kitchen_Living_01_1')
---table.insert(scene_names, 'Kitchen_Living_02_1')
-table.insert(scene_names, 'Kitchen_Living_03_1')
-table.insert(scene_names, 'Kitchen_Living_03_2')
-table.insert(scene_names, 'Kitchen_Living_04_2')
-table.insert(scene_names, 'Kitchen_05_1')
-table.insert(scene_names, 'Kitchen_Living_06')
-table.insert(scene_names, 'Kitchen_Living_08_1')
-table.insert(scene_names, 'Office_01_1')
-datasets = {}
-n_trains = torch.Tensor(#scene_names)
+-- train splits
+local scene_names
+if opt.split==1 then
+	scene_names = {'Home_02_1','Home_03_1','Home_03_2','Home_04_1','Home_04_2','Home_05_1','Home_05_2','Home_06_1','Home_14_1','Home_14_2','Office_01_1'}
+elseif opt.split==2 then
+	scene_names = {'Home_01_1','Home_01_2','Home_02_1','Home_04_1','Home_04_2','Home_05_1','Home_05_2','Home_06_1','Home_08_1','Home_14_1','Home_14_2'}
+else
+	scene_names = {'Home_01_1','Home_01_2','Home_03_1','Home_03_2','Home_04_1','Home_04_2','Home_05_1','Home_05_2','Home_06_1','Home_08_1','Office_01_1'}
+end
+
+-- loading trainsets
+local datasets = {}
+local n_trains = torch.Tensor(#scene_names)
 for i=1,#scene_names do
 	print('loading training images... ' .. scene_names[i])
-	datasets[i] = torch.load(string.format('data/rohit_%s_resize.t7',scene_names[i]))
+	datasets[i] = torch.load(string.format('data/rohit_%s.t7',scene_names[i]))
+	-- image scale [0,255] -> [0,1]
 	datasets[i].images = datasets[i].images:float():div(255)
-	n_trains[i] = datasets[i].indices:size(1)
+	n_trains[i] = datasets[i].candidates:size(1)
 end
-n_scene = #scene_names
+local n_scene = #scene_names
 
 for e=1,opt.max_epoch do
 	for i=1,opt.iter_per_epoch do
@@ -131,7 +113,7 @@ for e=1,opt.max_epoch do
 		local score = 0
 
 		local scene_id = torch.random(n_scene)
-		local train_idx = datasets[scene_id].indices[torch.random(n_trains[scene_id])]
+		local train_idx = torch.random(n_trains[scene_id])
 		local image_id = datasets[scene_id].candidates[train_idx][1]
 		local object_id = datasets[scene_id].candidates[train_idx][2]
 		local input_im = datasets[scene_id].images[image_id]
@@ -259,6 +241,7 @@ for e=1,opt.max_epoch do
 		print("epoch: " .. e .. " iter: " .. i .. '/' .. opt.iter_per_epoch .. 
 				string.format(' lr: %f training reward: %04f time: %04f',
 				config.learningRate, batch_reward, timer:time().real))
+		print("")
 	end
 	if e%10 == 0 then
 		snapshot = {}

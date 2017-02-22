@@ -12,13 +12,12 @@ opt = lapp[[
   --img_scale         (default 160)
   --lr								(default 0.00005)
   --epoch							(default 30)
-  --dropout						(default 0)
-  --optim_layer				(default 3)
   --scale							(default 0.2)
   --threshold					(default 0.9)
 	--T									(default 5)
 	--test_T						(default 5)
 	--split							(default 1)
+	--cnn_path					(default './snapshots/resnet-18.t7')
   -g, --gpu           (default 1)
 	-d, --debug					(default 0)
 ]]
@@ -28,12 +27,10 @@ if opt.debug>0 then
 	debugger.enter()
 end
 
-local model_name = string.format('actor_T%d_do0%d_lr%.6f_imgscale%d_split%d', 
-			opt.T, opt.dropout*10, opt.lr, opt.img_scale, opt.split)
+local model_name = string.format('actor_T%d_lr%.6f_split%d', opt.T, opt.lr, opt.split)
 
 print("creating model")
-local cnn_path = './snapshots/resnet-18.t7'
-local cnn = torch.load(cnn_path)
+local cnn = torch.load(opt.cnn_path)
 cnn:remove(#cnn.modules)
 cnn:remove(#cnn.modules)
 cnn:remove(#cnn.modules)
@@ -66,28 +63,29 @@ if opt.gpu > 0 then
 	bb_batch = bb_batch:cuda()
 end
 
--- loading training images
-scene_names = {}
-table.insert(scene_names, 'Bedroom_01_1')
---table.insert(scene_names, 'Kitchen_Living_01_1')
-table.insert(scene_names, 'Kitchen_Living_02_1')
---table.insert(scene_names, 'Kitchen_Living_03_1')
---table.insert(scene_names, 'Kitchen_Living_03_2')
---table.insert(scene_names, 'Kitchen_Living_04_2')
---table.insert(scene_names, 'Kitchen_05_1')
---table.insert(scene_names, 'Kitchen_Living_06')
---table.insert(scene_names, 'Kitchen_Living_08_1')
---table.insert(scene_names, 'Office_01_1')
-datasets = {}
-n_trains = torch.Tensor(#scene_names)
+-- test splits
+local scene_names
+if opt.split==1 then
+	local scene_names = {'Home_01_1','Home_01_2','Home_08_1'}
+elseif opt.split==2 then
+	local scene_names = {'Home_03_1','Home_03_2','Office_01_1'}
+else
+	local scene_names = {'Home_02_1','Home_14_1','Home_14_2'}
+end
+
+-- loading testing sets
+local datasets = {}
+local n_trains = torch.Tensor(#scene_names)
 for i=1,#scene_names do
 	print('loading training images... ' .. scene_names[i])
-	datasets[i] = torch.load(string.format('data/rohit_%s_resize.t7',scene_names[i]))
+	datasets[i] = torch.load(string.format('data/rohit_%s.t7',scene_names[i]))
+	-- image scale [0,255] -> [0,1]
 	datasets[i].images = datasets[i].images:float():div(255)
-	n_trains[i] = datasets[i].indices:size(1)
+	n_trains[i] = datasets[i].candidates:size(1)
 end
-n_scene = #scene_names
+local n_scene = #scene_names
 
+--testing
 local total_correct = torch.Tensor(n_scene):fill(0)
 local total_score = torch.Tensor(n_scene):fill(0)
 local total_init_correct = torch.Tensor(n_scene):fill(0)
