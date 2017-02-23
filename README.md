@@ -13,10 +13,10 @@ wget -P snapshots/ https://d2j0dndfm35trm.cloudfront.net/resnet-18.t7
 ```
 
 ## Download pretrained classifier
-We trained our classifier for the objects in bigbird dataset. These objects show up in the several places in the scenes. We used this classifiers to get the score of bounding boxes of the objects. This score will be the signal of training actor networks. Please refer to the paper more detail. We provide pretrained classifier that used in our paper. You can download it via https://drive.google.com/file/d/0B-r7apOz1BHASl94aVhDTkVqRHc/view?usp=sharing. Place this file in ./snapshots directory.
+We trained our classifier for the objects in bigbird dataset. These objects show up in the several places in the scenes. We used this classifiers to get the score of bounding boxes of the objects. This score will be the signal of training actor networks. Please refer to the paper more detail. We provide pretrained classifier that used in our paper. You can download it [here](https://drive.google.com/file/d/0B-r7apOz1BHASl94aVhDTkVqRHc/view?usp=sharing). Place this file in ./snapshots directory.
 
 ## Download and convert dataset for training actor network
-Download from http://cs.unc.edu/~ammirato/active_vision_dataset_website, extract to some directory $(DATADIR). 
+Download from [project homepage](http://cs.unc.edu/~ammirato/active_vision_dataset_website), extract to some directory $(DATADIR). 
 ```bash
 th make_datasets --data_dir $(DATADIR) --output_dir ./data
 ```
@@ -50,4 +50,5 @@ th test_actor.lua --split 1 --test_T 5 --cnn_path ./snapshots/resnet-18.t7 2>&1 
 
 ## Paper
 A Dataset for Developing and Benchmarking Active Vision, Phil Ammirato, Patric Poirson, Eunbyung Park, Jana Kosecka, Alexander Berg, ICRA 2017
-Project Homepage(http://cs.unc.edu/~ammirato/active_vision_dataset_website)
+
+[Project Homepage](http://cs.unc.edu/~ammirato/active_vision_dataset_website)
