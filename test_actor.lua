@@ -15,7 +15,7 @@ opt = lapp[[
   --scale							(default 0.2)
   --threshold					(default 0.9)
 	--T									(default 5)
-	--test_T						(default 20)
+	--test_T						(default 5)
 	--split							(default 1)
 	--cnn_path					(default './snapshots/resnet-18.t7')
   -g, --gpu           (default 1)
@@ -142,14 +142,14 @@ for scene_id=1,n_scene do
 			probs[t] = actor:forward({conv_feat[t],move_batch[t],bb_batch[t]})
 		
 			-- random baseline
-			actions[t] = torch.random(6)
+			--actions[t] = torch.random(6)
 			
 			-- forward baseline
 			--actions[t] = 1
 			
 			-- RL
-			--_,action = probs[t]:max(1)
-			--actions[t] = action[1]
+			_,action = probs[t]:max(1)
+			actions[t] = action[1]
 
 			-- take the action
 			results[idx][t+1][3] = actions[t]
