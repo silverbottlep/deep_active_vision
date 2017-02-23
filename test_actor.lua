@@ -15,7 +15,7 @@ opt = lapp[[
   --scale							(default 0.2)
   --threshold					(default 0.9)
 	--T									(default 5)
-	--test_T						(default 5)
+	--test_T						(default 20)
 	--split							(default 1)
 	--cnn_path					(default './snapshots/resnet-18.t7')
   -g, --gpu           (default 1)
@@ -66,11 +66,11 @@ end
 -- test splits
 local scene_names
 if opt.split==1 then
-	local scene_names = {'Home_01_1','Home_01_2','Home_08_1'}
+	scene_names = {'Home_01_1','Home_01_2','Home_08_1'}
 elseif opt.split==2 then
-	local scene_names = {'Home_03_1','Home_03_2','Office_01_1'}
+	scene_names = {'Home_03_1','Home_03_2','Office_01_1'}
 else
-	local scene_names = {'Home_02_1','Home_14_1','Home_14_2'}
+	scene_names = {'Home_02_1','Home_14_1','Home_14_2'}
 end
 
 -- loading testing sets
@@ -142,14 +142,15 @@ for scene_id=1,n_scene do
 			probs[t] = actor:forward({conv_feat[t],move_batch[t],bb_batch[t]})
 		
 			-- random baseline
-			--actions[t] = torch.random(6)
+			actions[t] = torch.random(6)
+			
 			-- forward baseline
 			--actions[t] = 1
 			
-			--action = torch.multinomial(probs, 1):squeeze()
-			--print(probs)
-			_,action = probs[t]:max(1)
-			actions[t] = action[1]
+			-- RL
+			--_,action = probs[t]:max(1)
+			--actions[t] = action[1]
+
 			-- take the action
 			results[idx][t+1][3] = actions[t]
 			local next_image_id = next_move_avail[actions[t]]
@@ -197,7 +198,7 @@ for scene_id=1,n_scene do
 			total_init_score[scene_id] = total_init_score[scene_id] + init_score
 		end
 	end
-	torch.save(string.format('actor_results_%s.t7',scene_names[scene_id]),results)
+	--torch.save(string.format('actor_results_%s.t7',scene_names[scene_id]),results)
 end
 
 for scene_id=1,n_scene do
