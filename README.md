@@ -49,6 +49,6 @@ th test_actor.lua --split 1 --test_T 5 --cnn_path ./snapshots/resnet-18.t7 2>&1 
 ```
 
 ## Paper
-A Dataset for Developing and Benchmarking Active Vision, Phil Ammirato, Patric Poirson, Eunbyung Park, Jana Kosecka, Alexander Berg, ICRA 2017
+A Dataset for Developing and Benchmarking Active Vision, Phil Ammirato, Patrick Poirson, Eunbyung Park, Jana Kosecka, Alexander Berg, ICRA 2017
 
 [Project Homepage](http://cs.unc.edu/~ammirato/active_vision_dataset_website)
